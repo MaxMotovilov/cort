@@ -1,0 +1,32 @@
+{
+  "name": "cort-unit",
+  "version": "0.1.0",
+  "description": "COmbinatorial Reachability Testing for asynchronous unit tests",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "node_modules/nodeunit/bin/nodeunit tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaxMotovilov/cort.git"
+  },
+  "author": "...Max...",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MaxMotovilov/cort/issues"
+  },
+  "homepage": "https://github.com/MaxMotovilov/cort#readme",
+  "engines": {
+    "node": ">= 6"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "nodeunit": "*"
+  },
+  "devDependencies": {
+    "nodeunit": "*"
+  }
+}
