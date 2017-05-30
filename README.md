@@ -14,7 +14,7 @@ Cort tested exhaustively!
 
     function testCase( later, done, meta ) {
         console.log( "Variant:", meta.name );
-    	later( () => console.log( "Step 1" ) );
+        later( () => console.log( "Step 1" ) );
         later( () => console.log( "Step 2" ) )
             // Will fail in the last permutation!
             .later( "Step 3", () => ( console.log( "Step 3" ), done() ) );
