@@ -20,7 +20,7 @@ by Cort plugins.
 
 Standalone usage of the permutation algorithm outside of a compatible unit testing framework:
 
-	const cort = require( "cort-unit" );
+    const cort = require( "cort-unit" );
 
     cort( testCase, complete, { maxRuns: 10 } );
 
@@ -113,3 +113,4 @@ Acts as a decorator for the [nodeunit](https://github.com/caolan/nodeunit) test 
 the test case into execution sequence multiple times, varying its name accordingly (`test`, `test-b`, `test-c`...)
 The `later()` API is injected into the `test` object (it is also passed in as the 2nd argument of the test case
 function).
+
