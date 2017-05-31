@@ -1,6 +1,6 @@
 const 	cort = require( "../nodeunit" ),
 		assert = require( "assert" );
-/*
+
 exports.assertionFail = cort( 
 	function( test ) {
 		var total = 3;
@@ -32,7 +32,6 @@ exports.doneTooEarly = cort(
 		}
 	}
 )
-*/
 
 exports.expectationFail = cort( 
 	function( test ) {
