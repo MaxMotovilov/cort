@@ -56,13 +56,13 @@ exports = module.exports = function cort( test_case, complete, options ) {
 			return seq
 		}
 
-		function done() {
-			if( pending || pos < path.length ) {
+		function done( err ) {
+			if( err != null )
+				complete( err, meta );
+			else if( pending || pos < path.length )
 				complete( Error( "done() called before test case completion" ), meta );
-				return 
-			}
-
-			nextTestCase();
+			else
+				nextTestCase();
 		}
 
 		function nextStep() {
@@ -108,7 +108,12 @@ exports = module.exports = function cort( test_case, complete, options ) {
 				pending = false;
 
 			++ pos;
-			next.fn();
+
+			try {
+				next.fn()
+			} catch( err ) {
+				complete( err, meta )
+			}
 		}
 	}
 
