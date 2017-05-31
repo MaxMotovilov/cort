@@ -1,6 +1,6 @@
 const 	cort = require( "../nodeunit" ),
 		assert = require( "assert" );
-
+/*
 exports.assertionFail = cort( 
 	function( test ) {
 		var total = 3;
@@ -8,7 +8,7 @@ exports.assertionFail = cort(
 		test.later( () => action( "A" ) );
 
 		test.later( () => action( "B" ) )
-			.later( () => (action( "C" ), assert( false )) );
+			.later( () => assert( false ) );
 
 		function action( name ) {
 			console.log( " -", name );
@@ -32,6 +32,7 @@ exports.doneTooEarly = cort(
 		}
 	}
 )
+*/
 
 exports.expectationFail = cort( 
 	function( test ) {

@@ -24,7 +24,7 @@ exports = module.exports = function cort( test_case, complete, options ) {
 					return result.reverse().join( "" )
 				},
 
-				get trace() { return path }
+				get trace() { return path.map( t => t.replace( /^[\s\S]*\xffff/, "" ) ) }
 			  }
 
 		++run_no;
@@ -152,5 +152,5 @@ function nodeNotFound() {
 }
 
 function tagList( item, rel ) {
-	return item.seq.tags.slice( 0, item.pos + 1 + ( rel || 0 ) ).join( "\n" )
+	return item.seq.tags.slice( 0, item.pos + 1 + ( rel || 0 ) ).join( "\xffff" )
 }

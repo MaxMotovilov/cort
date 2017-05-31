@@ -71,8 +71,8 @@ exports = module.exports = function( test_case, core_opts ) {
 	}
 
 	function noMorePermutations( err, meta ) {
-		if( err != null && err.message )
-			err.message += "\n" + meta.trace.join( "\n----\n" );
+		if( err != null && err.stack )
+			err.stack = err.stack.replace( /^.*\n/, msg => msg + meta.trace.map( t => " after " + t ).join( "\n" ) + "\n" );
 
 		if( nodeunit_done )
 			nodeunit_done( err );
