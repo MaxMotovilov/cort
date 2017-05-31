@@ -92,7 +92,7 @@ The metadata object used to identify current permutation provides the following 
 empty in most simple cases and never includes _all_ of the steps that would be executed if the permutation
 were to complete successfully.
 
-## [https://github.com/caolan/nodeunit](nodeunit) API
+## [nodeunit](https://github.com/caolan/nodeunit) API
 
     const cort = require( "cort-unit/nodeunit" ),
           assert = require( "assert" );
@@ -109,7 +109,7 @@ were to complete successfully.
 
 ### cort()
 
-Acts as a decorator for the [https://github.com/caolan/nodeunit](nodeunit) test cases: it automatically injects
+Acts as a decorator for the [nodeunit](https://github.com/caolan/nodeunit) test cases: it automatically injects
 the test case into execution sequence multiple times, varying its name accordingly (`test`, `test-b`, `test-c`...)
 The `later()` API is injected into the `test` object (it is also passed in as the 2nd argument of the test case
 function).
