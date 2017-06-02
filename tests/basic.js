@@ -1,12 +1,50 @@
 const 	cort = require( "../index" ),
         assert = require( "assert" );
 
+function testCort( test, testCase, post ) {
+
+    var variants = [];
+
+    cort( wrapTestCase, wrapDone );
+
+    function wrapTestCase( later, done, meta ) {
+        console.log( "+", meta.name );
+        variants.push( meta.name );
+        testCase( later, done, meta );
+    }
+
+    function wrapDone( err, meta ) {
+        if( err )
+            console.log(
+                err.message + "\n" +
+                meta.trace.map( tag => "  after " + tag + "\n" ).join( "" ) +
+                meta.todo.map(  tag => " before " + tag + "\n" ).join( "" )
+            );
+
+        post && post( err, variants );
+        test.done();
+    }
+}
+
+function fails( name_or_num ) {
+    return function( err, variants ) {
+        assert( err instanceof Error );
+        if( name_or_num != null )
+            assert.equal( name_or_num, typeof name_or_num == 'string' ? variants[ variants.length-1 ] : variants.length - 1 );
+    }
+}
+
+function completes( num ) {
+    return function( err, variants ) {
+        assert.equal( err, null );
+        assert.equal( variants.length, num );
+    }
+}
+
 exports.minimal = function( test ) {
-    cort( testCase, test.done );
+    testCort( test, testCase, completes( 3 ) );
 
     function testCase( later, done, meta ) {
-        console.log( "+", meta.name );
-
         var total = 3;
 
         later( () => action( "A" ) );
@@ -23,18 +61,9 @@ exports.minimal = function( test ) {
 }
 
 exports.naive = function( test ) {
-    cort( testCase, 
-          (err, meta) => { 
-            assert( err instanceof Error ); 
-            console.log( err.stack );
-            console.log( meta.trace.join( "\n----\n" ) );
-            test.done();
-          }
-    )
+    testCort( test, testCase, fails( "c" ) );
 
     function testCase( later, done, meta ) {
-        console.log( "+", meta.name );
-
         later( () => action( "A" ) );
 
         later( () => action( "B" ) )
