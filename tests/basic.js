@@ -75,3 +75,31 @@ exports.naive = function( test ) {
     }
 }
 
+exports.completion = function( test ) {
+    testCort( test, testCase, completes( 6 ) );
+    
+    function testCase( later, done, meta ) {
+
+        var total = 2;
+
+        later( ready => setTimeout( ready( () => --total || done() ), 50 ) );
+        later( ready => setTimeout( ready( () => --total || done() ), 100 ) );
+    }
+}
+
+exports.completion2 = function( test ) {
+    testCort( test, testCase, completes( 20 ) );
+    
+    function testCase( later, done, meta ) {
+
+        var total = 2;
+
+        later( ready => setTimeout( ready( next( "Path A" ) ), 50 ) );
+        later( ready => setTimeout( ready( next( "Path B" ) ), 100 ) );
+
+        function next( tag ) {
+            return () => later( tag, () => --total || done() )
+        }
+    }
+}
+
