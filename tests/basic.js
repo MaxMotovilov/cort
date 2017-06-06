@@ -1,28 +1,63 @@
 const 	cort = require( "../index" ),
         assert = require( "assert" );
 
-function testCort( test, testCase, post ) {
+function testCort( post, body ) {
+    return {
+        run: function( test ) {
+            const variants = [];
 
-    var variants = [];
+            cort.run( 
+                ( later, done, meta ) => {
+                    console.log( "+", meta.name );
+                    variants.push( meta.name );
+                    body( later, done );
+                },
 
-    cort( wrapTestCase, wrapDone );
+                ( err, meta ) => {
+                    if( err )
+                        console.log(
+                            err.message + "\n" +
+                            meta.trace.map( tag => "  after " + tag + "\n" ).join( "" ) +
+                            meta.todo.map(  tag => " before " + tag + "\n" ).join( "" )
+                        );
 
-    function wrapTestCase( later, done, meta ) {
-        console.log( "+", meta.name );
-        variants.push( meta.name );
-        testCase( later, done, meta );
-    }
+                    post && post( err, variants );
+                    test.done();
+                }
+            )
+        },
 
-    function wrapDone( err, meta ) {
-        if( err )
-            console.log(
-                err.message + "\n" +
-                meta.trace.map( tag => "  after " + tag + "\n" ).join( "" ) +
-                meta.todo.map(  tag => " before " + tag + "\n" ).join( "" )
-            );
+        iterate: function( test ) {
+            
+            const variants = [],
+                  iterator = cort.iterate( 
+                    (later, done) => {
+                        console.log( "+", iterator.name );
+                        variants.push( iterator.name );
+                        body( later, done );
+                    }
+                  );
 
-        post && post( err, variants );
-        test.done();
+            next();
+
+            function next() {
+                var { value, done } = iterator.next();
+                if( done )
+                    test.done();
+                else
+                    return value.then(
+                        next,
+                        err => {
+                            console.log(
+                                err.message + "\n" +
+                                iterator.trace.map( tag => "  after " + tag + "\n" ).join( "" ) +
+                                iterator.todo.map(  tag => " before " + tag + "\n" ).join( "" )
+                            );
+                            return next()
+                        }
+                    )
+            }
+        }
     }
 }
 
@@ -41,10 +76,9 @@ function completes( num ) {
     }
 }
 
-exports.minimal = function( test ) {
-    testCort( test, testCase, completes( 3 ) );
-
-    function testCase( later, done, meta ) {
+exports.minimal = testCort(
+    completes( 3 ),
+    function( later, done ) {
         var total = 3;
 
         later( () => action( "A" ) );
@@ -58,12 +92,11 @@ exports.minimal = function( test ) {
                 done();
         }
     }
-}
+);
 
-exports.naive = function( test ) {
-    testCort( test, testCase, fails( "c" ) );
-
-    function testCase( later, done, meta ) {
+exports.naive = testCort( 
+    fails( "c" ),
+    function( later, done ) {
         later( () => action( "A" ) );
 
         later( () => action( "B" ) )
@@ -73,24 +106,21 @@ exports.naive = function( test ) {
             console.log( " -", name );
         }
     }
-}
+);
 
-exports.completion = function( test ) {
-    testCort( test, testCase, completes( 6 ) );
-    
-    function testCase( later, done, meta ) {
-
+exports.completion = testCort( 
+    completes( 6 ),
+    function( later, done ) {
         var total = 2;
 
         later( ready => setTimeout( ready( () => --total || done() ), 50 ) );
         later( ready => setTimeout( ready( () => --total || done() ), 100 ) );
     }
-}
+);
 
-exports.completion2 = function( test ) {
-    testCort( test, testCase, completes( 20 ) );
-    
-    function testCase( later, done, meta ) {
+exports.completion2 = testCort( 
+    completes( 20 ),
+    function( later, done ) {
 
         var total = 2;
 
@@ -101,5 +131,5 @@ exports.completion2 = function( test ) {
             return () => later( tag, () => --total || done() )
         }
     }
-}
+);
 

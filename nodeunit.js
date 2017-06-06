@@ -31,7 +31,7 @@ exports = module.exports = function( test_case, core_opts ) {
 
     function firstPermutation( test ) {
         nodeunit_api = test;
-        core( runPermutation, noMorePermutations, core_opts );
+        core.run( runPermutation, noMorePermutations, core_opts );
     }
 
     function runPermutation( later, done, meta ) {

@@ -3,40 +3,117 @@
 // Copyright (c) 2017 12 Quarters Consulting & ...Max...
 // MIT License - https://raw.githubusercontent.com/MaxMotovilov/cort/master/LICENSE
 
-exports = module.exports = function cort( test_case, complete, options ) {
-    var root, path = [], run_no = 0;
+exports.run = function run( test_case, complete, options ) {
+    const meta = {};
 
-    runTestCase();
+    cort(
+        (later, done) => test_case( later, done, meta ),
+        null,
+        err => err ? complete( err, meta ) : complete(),
+        options,
+        meta
+    )()
+}
+
+exports.iterate = function iterate( test_case, options ) {
+
+    return iterator( null, [], 0 )
+
+    function iterator( root, path, run_no ) {
+        const result = loop(),
+
+              iteration = cort(
+                    test_case,
+                    (new_root, new_run_no) => {
+                        root = new_root;
+                        run_no = new_run_no;
+                        next();
+                    },
+                    err => done( err ),
+                    options,
+                    result,
+                    root,
+                    path,
+                    run_no
+              );
+
+        var	next, done;
+
+        loop.copy = () => iterator( deepCopy( root ), path.slice(), run_no );
+
+        return result;
+    
+        function* loop() {
+            var promise, finished;
+
+            while( !finished ) {
+                promise = (options && options.promise || builtinPromise)(
+                    function( resolve, reject ) {
+                        next = () => {
+                            promise = null;
+                            resolve();
+                        }
+                        done = err => {
+                            promise = null;
+                            finished = true;
+                            if( err != null )
+                                reject( err );
+                            else
+                                resolve();
+                        }
+                    }
+                );
+
+                (options && options.enqueue || setImmediate)( iteration );
+
+                yield promise;
+
+                if( promise )
+                    throw Error( "Assertion failed in cort: next() called before run has completed" );
+            }
+        }
+    }	 
+}
+
+function cort( iteration, next_iteration, complete, options, meta, root, path, run_no ) {
+
+    var pos;
+
+    path = path || [];
+    run_no = run_no || 0;
+
+    Object.defineProperties( meta, {
+        name:  { get: function() {
+            var result = [], n = run_no - 1;
+
+            do {
+                result.push( String.fromCharCode( n % 26 + "a".charCodeAt(0) ) );
+                n = Math.floor( n / 26 );
+            } while( n > 0 );
+
+            return result.reverse().join( "" )
+        } },
+
+        trace: { get: function() { return path.slice( 0, pos ).map( cleanTag ) } },
+
+        todo:  { get: function() { return path.slice( pos ).map( cleanTag ) } }
+    } );
+
+    return runTestCase
 
     function runTestCase() {
-        var curr, pos = 0, pending;
+        var curr, pending;
+        const pool = [];
 
-        const pool = [],
-              meta = {
-                get name() {
-                    var result = [], n = run_no - 1;
-
-                    do {
-                        result.push( String.fromCharCode( n % 26 + "a".charCodeAt(0) ) );
-                        n = Math.floor( n / 26 );
-                    } while( n > 0 );
-
-                    return result.reverse().join( "" )
-                },
-
-                get trace() { return path.slice( 0, pos ).map( cleanTag ) },
-
-                get todo() { return path.slice( pos ).map( cleanTag ) }
-              }
-
+        pos = 0;
         ++run_no;
 
         if( options && options.maxRuns && run_no > options.maxRuns ) {
             complete( Error( "maxRuns exceeded" ), meta );
             return
         }
-             
-        test_case( later, done, meta );
+
+        iteration( later, done );
 
         function later( tag, fn ) {
 
@@ -63,9 +140,9 @@ exports = module.exports = function cort( test_case, complete, options ) {
 
         function done( err ) {
             if( err != null )
-                 complete( err, meta );
+                 complete( err );
             else if( pool.length > 0 || pos < path.length )
-                complete( Error( "done() called before test case completion" ), meta );
+                complete( Error( "done() called before test case completion" ) );
             else
                 nextTestCase();
         }
@@ -91,7 +168,7 @@ exports = module.exports = function cort( test_case, complete, options ) {
                     return
                 }
 
-                let node = { next: {}, pool: pool.slice() }
+                let node = { next: {}, pool: pool.map( item => ({ seq: { tags: item.seq.tags }, pos: item.pos, running: item.running }) ) }
 
                 if( pos == 0 )
                     root = curr = node;
@@ -103,13 +180,12 @@ exports = module.exports = function cort( test_case, complete, options ) {
                 next = pool.shift();
             } else {
                 // Navigating the path
-    
+
                 let next_index = pool.findIndex( item => tagList( item ) == path[pos] );
 
                 if( next_index < 0 ) {
                     complete( 
-                        Error( "Non-deterministic test case: expected choice not available\n" + path[pos] ),
-                        meta
+                        Error( "Non-deterministic test case: expected choice not available\n" + path[pos] )
                     );
                     return
                 } else if( pool[next_index].running ) {
@@ -145,7 +221,7 @@ exports = module.exports = function cort( test_case, complete, options ) {
                 else
                     next.fn();
             } catch( err ) {
-                complete( err, meta )
+                complete( err )
             }
         }
     }
@@ -169,7 +245,12 @@ exports = module.exports = function cort( test_case, complete, options ) {
             else while( ++pos < curr.pool.length ) {
                 if( curr.pool[pos].pos == 0 || path.indexOf( tagList( curr.pool[pos], -1 ) ) >= 0 ) {
                     path.push( tagList( curr.pool[ pos ] ) );
-                    runTestCase();
+
+                    if( next_iteration )
+                        next_iteration( root, run_no );
+                    else
+                        runTestCase();
+ 
                     return
                 }
             }
@@ -177,6 +258,14 @@ exports = module.exports = function cort( test_case, complete, options ) {
 
         complete();
     }
+}
+
+function builtinPromise( init ) {
+    return new Promise( init )
+}
+
+function deepCopy( x ) {
+    return JSON.parse( JSON.stringify( x ) )
 }
 
 function initialStepOrder( a, b ) {
