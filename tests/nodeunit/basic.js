@@ -1,4 +1,4 @@
-const 	cort = require( "../index" ),
+const 	cort = require( "../../index" ),
         assert = require( "assert" );
 
 function testCort( post, body ) {

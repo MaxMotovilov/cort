@@ -1,4 +1,4 @@
-const 	cort = require( "../nodeunit" ),
+const 	cort = require( "../../nodeunit" ),
         assert = require( "assert" );
 
 exports.foreign = function( test ) {

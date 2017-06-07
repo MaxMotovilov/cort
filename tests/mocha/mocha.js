@@ -1,4 +1,4 @@
-const cort = require( "../mocha" ),
+const cort = require( "../../mocha" ),
       assert = require( "assert" ); 
 
 it = cort( it );

@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "node_modules/nodeunit/bin/nodeunit tests"
+    "test": "node_modules/nodeunit/bin/nodeunit tests/nodeunit; node_modules/mocha/bin/mocha tests/mocha"
   },
   "repository": {
     "type": "git",
