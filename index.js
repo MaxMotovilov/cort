@@ -258,6 +258,27 @@ function cort( iteration, next_iteration, complete, options, meta, root, path, r
 
         complete();
     }
+
+    function makeReadyCallback( ready, item ) {
+        const result = 
+                callback => function() { 
+                    ready( item, () => callback.apply( this, arguments ) ) 
+                }
+     
+        result.when = 
+                v_or_p => v_or_p && typeof v_or_p.then === 'function'
+                    ? v_or_p.then( x => whenReady( x ), err => whenReady( null, err ) )
+                    : whenReady( v_or_p )
+    
+        return result
+
+        function whenReady( value, err ) {
+            return (options && options.promise || builtinPromise)(
+                (resolve, reject) =>
+                    ready( item, err == null ? () => resolve( value ) : () => reject( err ) )
+            )
+        }
+    }
 }
 
 function builtinPromise( init ) {
@@ -271,10 +292,6 @@ function deepCopy( x ) {
 function initialStepOrder( a, b ) {
     return (b.running === false) - (a.running === false) ||
            tagList(a).localeCompare( tagList(b) )
-}
-
-function makeReadyCallback( ready, item ) {
-    return callback => function() { ready( item, () => callback.apply( this, arguments ) ) } 
 }
 
 function nodeNotFound() {

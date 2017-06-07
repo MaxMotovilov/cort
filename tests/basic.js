@@ -133,3 +133,20 @@ exports.completion2 = testCort(
     }
 );
 
+exports.promises = testCort(
+    completes( 6 ),
+    function( later, done ) {
+        var total = 2;
+
+        later( ready => ready.when( delay( "foo", 50 ) ).then( v => { assert.equal( v, "foo" ); --total || done() } ) );
+        later( ready => ready.when( timeout( 100 ) ).then( () => assert( false ), err => { assert( err instanceof Error ); --total || done() } ) );
+
+        function delay( what, ms ) {
+            return new Promise( resolve => setTimeout( () => resolve( what ), ms ) )
+        }
+
+        function timeout( ms ) {
+            return new Promise( (_,reject) => setTimeout( () => reject( Error( "timeout" ) ), ms ) )
+        }
+    }
+);
