@@ -51,7 +51,7 @@ exports.iterate = function iterate( test_case, options ) {
                     function( resolve, reject ) {
                         next = () => {
                             promise = null;
-                            resolve();
+                            resolve( true );
                         }
                         done = err => {
                             promise = null;
@@ -59,7 +59,7 @@ exports.iterate = function iterate( test_case, options ) {
                             if( err != null )
                                 reject( err );
                             else
-                                resolve();
+                                resolve( false );
                         }
                     }
                 );
