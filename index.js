@@ -39,7 +39,7 @@ exports.iterate = function iterate( test_case, options ) {
 
         var	next, done;
 
-        loop.copy = () => iterator( deepCopy( root ), path.slice(), run_no );
+        result.copy = () => iterator( deepCopy( root ), path.slice(), run_no );
 
         return result;
     

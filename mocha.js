@@ -8,7 +8,6 @@ const core = require( "./index" );
 exports = module.exports = function cort( mocha_it, options ) {
     const it = wrapApi( mocha_it, options );
     it.only = wrapApi( mocha_it.only, options );
-    it.retries = mocha_it.retries;
     return it
 }
 
@@ -57,7 +56,16 @@ function makeTestCase( iterator, factory, title ) {
                         mocha_done();
                     },
                     err => {
-                        iterator = null;
+                        if( !( test.retries() > 0 ) )
+                            // Do not null the iterator if the test might yet be re-run!
+                            iterator = null; 
+
+                        if( err != null && err.stack )
+                            err.stack = err.stack.replace( /^.*\n/, msg => 
+                                msg + current.trace.map( t => " after " + t + "\n" ).join( "" ) 
+                                    + current.todo.map(  t => "before " + t + "\n" ).join( "" ) 
+                            );
+
                         mocha_done( err );
                     }
                 );
@@ -89,8 +97,9 @@ class Window {
         return this.array[ this.from++ ]
     }
 
-    unshift() {
-        return this.end - (--this.from)
+    unshift( what ) {
+        this.array[ --this.from ] = what;
+        return this.length
     }
 
     get length() {
