@@ -79,28 +79,12 @@ function completes( num ) {
 exports.minimal = testCort(
     completes( 3 ),
     function( later, done ) {
-        var total = 3;
-
         later( () => action( "A" ) );
 
         later( () => action( "B" ) )
             .later( () => action( "C" ) );
 
-        function action( name ) {
-            console.log( " -", name );
-            if( --total == 0 )
-                done();
-        }
-    }
-);
-
-exports.naive = testCort( 
-    fails( "c" ),
-    function( later, done ) {
-        later( () => action( "A" ) );
-
-        later( () => action( "B" ) )
-            .later( "Action C", () => (action( "C" ), done()) );
+        done();
 
         function action( name ) {
             console.log( " -", name );
@@ -112,7 +96,6 @@ exports.completion = testCort(
     completes( 6 ),
     function( later, done ) {
         var total = 2;
-
         later( ready => setTimeout( ready( () => --total || done() ), 50 ) );
         later( ready => setTimeout( ready( () => --total || done() ), 100 ) );
     }
@@ -136,10 +119,9 @@ exports.completion2 = testCort(
 exports.promises = testCort(
     completes( 6 ),
     function( later, done ) {
-        var total = 2;
-
-        later( ready => ready.when( delay( "foo", 50 ) ).then( v => { assert.equal( v, "foo" ); --total || done() } ) );
-        later( ready => ready.when( timeout( 100 ) ).then( () => assert( false ), err => { assert( err instanceof Error ); --total || done() } ) );
+        later( ready => ready.when( delay( "foo", 50 ) ).then( v => assert.equal( v, "foo" ) ) );
+        later( ready => ready.when( timeout( 100 ) ).then( () => assert( false ), err => assert( err instanceof Error ) ) );
+        done();
 
         function delay( what, ms ) {
             return new Promise( resolve => setTimeout( () => resolve( what ), ms ) )

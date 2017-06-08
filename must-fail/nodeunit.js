@@ -18,21 +18,6 @@ exports.assertionFail = cort(
     }
 )
 
-exports.doneTooEarly = cort( 
-    function( test ) {
-        test.later( () => action( "A" ) );
-
-        test.later( () => action( "B" ) )
-            .later( () => action( "C" ) );
-
-        function action( name ) {
-            console.log( " -", name );
-            if( name == "C" )
-                test.done();
-        }
-    }
-)
-
 exports.expectationFail = cort( 
     function( test ) {
         var total = 3;

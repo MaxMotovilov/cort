@@ -14,8 +14,6 @@ describe( "cort/mocha tests", () => {
     afterEach( () => console.log( "Constant =", constant ) );
 
     it( "Minimal", function( later, done ) {
-        var total = 3;
-
         assert.equal( constant++, 1 );
 
         later( () => action( "A" ) );
@@ -23,10 +21,10 @@ describe( "cort/mocha tests", () => {
         later( () => action( "B" ) )
             .later( () => action( "C" ) );
 
+        done();
+    
         function action( name ) {
             console.log( " -", name );
-            if( --total == 0 )
-                done();
         }
     } )
 } )
