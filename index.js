@@ -117,7 +117,9 @@ function cort( iteration, next_iteration, complete, options, meta, root, path, r
 
         function later( tag, fn ) {
 
-            const seq = this && this.later && this || { later: later, tags: [] };
+            const seq = this && this.later && this || { tags: [] };
+            if( !seq.later )
+                seq.later = later.bind( seq );
 
             if( fn == null ) {
                 fn = tag;
