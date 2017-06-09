@@ -56,8 +56,10 @@ exports = module.exports = function( test_case, core_opts ) {
         run = function( test ) {
             nodeunit_done = test.done;
             nodeunit_api = null;
+            test.later = later.bind( null );
             test.done = done;
-            test_case( test, test.later = later.bind( null ) );
+            test.meta = meta;
+            test_case( test );
         }
             
         if( nodeunit_api )

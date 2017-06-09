@@ -17,13 +17,15 @@ exports = module.exports = function cort( mocha_it, options ) {
 
 function wrapApi( it, options ) {
     return function( title, fn ) {
-        const test = makeTestCase( core.iterate( (later,done) => fn.call( suite.ctx, later, done ), options ), fn => it( title, fn ), title ),
+        const test = makeTestCase( core.iterate( forward, options ), fn => it( title, fn ), title ),
               suite = test.parent;
 
         if( !(suite.tests instanceof InPlaceSlice) )
             suite.tests = new InPlaceSlice( suite.tests );
 
         return test;
+
+        function forward() { fn.apply( suite.ctx, arguments ) }
     }
 }
 

@@ -7,7 +7,7 @@ exports.run = function run( test_case, complete, options ) {
     const meta = {};
 
     cort(
-        (later, done) => test_case( later, done, meta ),
+        test_case,
         null,
         err => err ? complete( err, meta ) : complete(),
         options,
@@ -113,7 +113,7 @@ function cort( iteration, next_iteration, complete, options, meta, root, path, r
             return
         }
 
-        iteration( later, done );
+        iteration( later, done, meta );
 
         function later( tag, fn ) {
 
