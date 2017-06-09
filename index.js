@@ -117,7 +117,7 @@ function cort( iteration, next_iteration, complete, options, meta, root, path, r
 
         function later( tag, fn ) {
 
-            const seq = this && this.later && this || { tags: [] };
+            const seq = this && this.later && this || { tags: [], promise: promisifyLater };
             if( !seq.later )
                 seq.later = later.bind( seq );
 
@@ -169,7 +169,12 @@ function cort( iteration, next_iteration, complete, options, meta, root, path, r
                         // top candidate still running, wait for it to complete
                         return
 
-                    let node = { next: {}, pool: pool.map( item => ({ seq: { tags: item.seq.tags }, pos: item.pos, running: item.running }) ) }
+                    let node = { 
+                        next: {}, 
+                        pool: pool.map( 
+                            item => ({ seq: { tags: item.seq.tags }, pos: item.pos, running: item.running }) 
+                        )
+                    }
 
                     if( pos == 0 )
                         root = curr = node;
@@ -227,6 +232,38 @@ function cort( iteration, next_iteration, complete, options, meta, root, path, r
                 if( pos < path.length )
                     complete( Error( "Non-deterministic test case: done() called before expected steps completed" ) );
                 nextTestCase();
+            }
+        }
+
+        function promisifyLater() {
+            // this = sequence object
+            const key = tagList( { seq: this, pos: this.tags.length-1 } ),
+                  item = pool.find( item => tagList( item ) == key ),
+                  fn = item && item.fn;
+
+            if( !item )
+                throw Error( "later().promise() used out of sequence" );
+
+            return (options && options.promise || builtinPromise)( fn.length ? wrap1 : wrap0 );
+
+            function wrap0( resolve, reject ) {
+                item.fn = () => {
+                    try {
+                        resolve( fn() )
+                    } catch( err ) {
+                        reject( err )
+                    }
+                }	
+            }
+
+            function wrap1( resolve, reject ) {
+                item.fn = ready => {
+                    try {
+                        resolve( fn( ready ) )
+                    } catch( err ) {
+                        reject( err )
+                    }
+                }	
             }
         }
     }
