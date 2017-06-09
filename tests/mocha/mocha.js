@@ -3,9 +3,6 @@ const cort = require( "../../mocha" ),
 
 it = cort( it );
 
-beforeEach( () => console.log( "Before test" ) );
-afterEach( () => console.log( "After test" ) );
-
 describe( "cort/mocha tests", () => {
 
     var constant;
