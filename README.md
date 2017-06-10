@@ -28,21 +28,22 @@ events that may legitimately occur in any relative order. In absence of side eff
 the order wouldn't matter. When side effects are present -- especially side effects that 
 may be concealed from the programmer behind API barriers -- it becomes critical to ensure
 that the code will work correctly no matter what the true physical order of the logically
-simultaneous, side effect producing actions proves to be. Asynchronous single-threaded
-programming model found in Javascript softens the impact somewhat, as synchronous code
-sequences (i.e. those not yielding control back to the event loop in the interim) can only
-run one after the other rather than concurrently, as is common in multi-threaded programming.
-This should not unduly alleviate the concerns, as the actions "logically atomic" from the 
-standpoint of the user code (i.e. performed inside 3rd party code as a result of an API call) 
-are very often asynchronous in nature; also, real-world architectures tend to employ multiple 
-interacting reactor loops (e.g. multiple instances of *node.js* communicating over TCP sockets) 
-which do indeed execute concurrently. 
+simultaneous, side effect producing actions proves to be. 
+
+Asynchronous single-threaded programming model found in Javascript softens the impact somewhat, 
+as synchronous code sequences (i.e. those not yielding control back to the event loop in the 
+interim) can only run one after the other rather than concurrently, as is common in multi-threaded 
+programming. This should not unduly alleviate the concerns, as the actions "logically atomic" 
+from the standpoint of the user code (i.e. performed inside 3rd party code as a result of an 
+API call) are very often asynchronous in nature; also, real-world architectures tend to employ 
+multiple interacting reactor loops (e.g. multiple instances of **node.js** communicating over 
+TCP sockets) which do indeed execute concurrently. 
 
 #### Example 1: streaming parser
 
 As an example, consider a streaming record parser that accepts a character stream as input
 and produces records (objects) from it on demand, as they become available. It is convenient
-to provide a pipe API to such a component: a [Writeable](https://nodejs.org/dist/latest/docs/api/stream.html#stream_writable_streams) 
+to provide a pipe API to such a component: a [Writable](https://nodejs.org/dist/latest/docs/api/stream.html#stream_writable_streams) 
 stream for the characters received from an external source (e.g. piped from a socket or file)
 and a [Readable](https://nodejs.org/dist/latest/docs/api/stream.html#stream_readable_streams)
 stream in object mode for the produced records; furthermore, it is convenient to operate the
@@ -117,16 +118,16 @@ serves this purpose.
 Let's consider another example: [updating a shared data structure.](https://github.com/MaxMotovilov/cort/blob/master/tests/mocha/shared.js) 
 A key-value in-memory store ([memcached](https://memcached.org/), [Redis](https://redis.io/)...) 
 is often used to provide  shared memory to multiple clustered instances of node.js services. 
-Assuming a store that implements atomic read and swap (read+write) operations, we want to store a 
+Assuming a store that implements atomic _read_ and _swap_ (read old+write new), we want to store a 
 list of records as a JSON formatted string in one of the keys and let multiple parallel clients add 
 records to the  list without coordinating the activity via any other channels, or destructively interfering 
 with each other's updates.
 
 The algorithm used in this example is workable, if simplistic and likely suboptimal: while adding a record 
-to the list, it keeps track of all records it has seen in all the copies of the list obtained from the shared 
+to the list, it keeps track of all records it has seen in any copies of the list obtained from the shared 
 source by `swap()`-ping them with the currently accumulated set. Once a swap fails to introduce any new
-records, it considers the list content stabilized (final list content is returned as result of the `add()`
-method via a promise):
+records to the set, the algorithm considers list content stabilized (final list content is returned as a 
+result of the `add()` method via a promise):
 
     class SharedList {
         constructor( store, key, client_id ) {
@@ -162,7 +163,7 @@ method via a promise):
                 list = Object.keys( known_records ).map( id => known_records[id] );
 
                 return self.store.swap( self.key, list )
-                           .then( old_list =>  
+                           .then( old_list =>
                                 old_list.every( record => record.id in known_records ) 
                                     ? list : tryUpdating( old_list ) 
                             )
@@ -174,7 +175,7 @@ To test it, we mock up the `store` interface object expected to provide two asyn
 `read()` and `swap()` which in real use would issue network requests with unpredictable delays. In the
 mockup, timing unpredictability is replaced with explicit permutation of event order ensured
 by Cort. Since both methods are logically asynchronous actions with duration rather than events,
-it it tempting to implement them using the 2nd form of `later()` that separately marks up initiation 
+it is tempting to implement them using the 2nd form of `later()` that separately marks up initiation 
 and completion of an asynchronous step:
 
     function promise( action ) {
@@ -202,7 +203,7 @@ and completion of an asynchronous step:
     }
  
 (the rest of the mock class can be seen in source code). Alas, this approach really brings
-the combinatorial explosion into play: in my tests, *node.js* heap blew up somewhere between 200K and 
+the combinatorial explosion into play: in my tests, **node.js** heap blew up somewhere between 200K and 
 500K iterations. First thought upon seeing this was "There really is no replacement for formal
 proofs of correctness!"  Fortunately, this time there was. While `read()` and `swap()` _appear_ to
 be actions with extended duration, in reality (not just in a mockup, but in actual use!) they implement
@@ -251,17 +252,18 @@ have to be chosen carefully in order to preserve the balance between coverage an
 receive unique tags every time and represent distinct nodes) where edges are cause-and-effect relationships.
 Cort does not provide facilities to describe an arbitrary DAG by specifying all of those relationships 
 explicitly. Instead, it uses a seemingly natural approach of considering the steps executed in the same 
-synchronous sequence to be arbitrarily permutable unless explicitly ordered by chaining the calls to 
-`later()`. On the other hand, step B scheduled for later execution as part of execution of step A is 
-implicitly connected to it with an edge -- order of A and B will stay immutable in all permutations. 
-While practical and easy to follow, these rules may yet prove insufficient to cover some important scenarios.
+synchronous sequence to be arbitrarily permutable unless explicitly ordered by chaining calls to 
+`later()`. Most of the cause-effect relationships are inferred by executing the code: step B scheduled 
+for later execution as part of execution of step A is implicitly connected to it with an edge -- order 
+of A and B will stay immutable in all permutations.  While practical, this approach may yet prove 
+insufficient to cover some important scenarios.
 
 * The 2nd form of `later()` (with the `ready` callback argument) was added to Cort API as a
 natural way of describing all sorts of actions with duration, including, but not limited to, functions
-returning promises. It introduces two connected notes into the graph: the starting and completion of the
-step. As became clear in the [2nd example above](#example-2-updating-shared-list), it has a big impact
-on the number of permutations; it is still not clear whether this facility is strictly necessary or even
-provides significant convenience compared to using 2 separate calls to `later()` where necessary.  
+returning promises. It introduces two connected nodes into the graph: the starting and completion points
+of the step. As became clear in the [2nd example above](#example-2-updating-shared-list), it has a big 
+impact on the number of permutations; it is still not clear whether this facility is strictly necessary 
+or even provides significant convenience compared to using 2 separate calls to `later()` where necessary.
 
 ----------------------------------------------------------------------
 
@@ -344,7 +346,7 @@ It is also possible to write:
 but the resulting promise will resolve to the result returned by `asyncActionWithCallback()` when it
 executes (i.e. before either `ready()` or `callback()` are called).
 
-Chaining `.promise()` to the value returned by `later()` *must be* synchronous.
+Chaining `.promise()` to the value returned by `later()` **must be** synchronous.
 
 ### done()
 
@@ -383,13 +385,13 @@ method.
 
 ## [Mocha](https://github.com/mochajs/mocha) plugin API
 
-const cort = require( "cort-unit/mocha" );
+    const cort = require( "cort-unit/mocha" );
 
-describe( "This thing", function() {
-    cort( it )( "should work no matter what", function( later, done, meta ) {
-        // Test case code
+    describe( "This thing", function() {
+        cort( it )( "should work no matter what", function( later, done, meta ) {
+            // Test case code
+        } );
     } );
-} );
 
 ### cort()
 
