@@ -314,7 +314,7 @@ completion callback or returns a promise, use a modified form of `later()`:
 
 The above will not only vary the order in which `fs.readdir()` and `db.query()` are initiated, but
 also the order in which `processAttachments()` and `processInvoices()` are called -- not depending
-on the actual duration of each step. Note that Cort does not take into account whether the asynchronous
+on actual durations of each step. Note that Cort does not take into account whether the asynchronous
 action completes successfully or fails: `ready()` only serves to mark its temporal completion and
 then passes the results on to the unit test code, unchanged.
 
@@ -421,3 +421,80 @@ via `test.meta`.
 
 Cort options, if any, can be passed into the decorator call as an optional 2nd argument.
 
+## Core API
+
+Cort core API is used by the plugins extending the APIs of unit testing libraries. As such, it is likely to be more
+volatile than end user APIs; there's no real reason to consume it directly outside of Cort codebase.
+
+At present, the core API provides two distinct interfaces to the permutating algorithm: a runner loop and a promise
+generator.
+
+### run()
+
+    const cort = require( "cort-unit" );
+    
+    cort.run( test_case, complete, options );
+
+    function test_case( later, done, meta ) {
+        // Test case wrapper or body
+    }
+
+    function complete( err ) {
+        // Called when all permutations are exhausted
+    }
+
+The runner loop API, `cort.run()` accepts a test case body with the usual arguments, a callback function `complete()`
+that will be called exactly once: with no arguments in case of success or with the `Error` object if it is
+is thrown by the test code, passed into the `done()` call or arises from an internal error in Cort code; third
+optional argument can be used to pass in the dictionary of options.
+
+### iterate()
+
+    const cort = require( "cort-unit" );
+
+    const iterator = cort.iterate( test_case, options );
+
+    next( true );
+
+    function next( more ) {
+        if( !more )
+            // 1st chance to detect normal completion
+            return;
+
+        var { value, done } = iterator.next();
+        if( done )
+            // 2nd chance to detect normal completion
+            return;
+        else
+            // Can call iterator.copy() here
+            return value.then( next, failed );
+    }
+
+    function failed( err ) {
+        // Called only on failure
+    }	
+
+    function test_case( later, done, meta ) {
+        // Test case wrapper or body
+    }
+
+The generator API, `cort.iterate()` accepts a test case body and an optional dictionary of options. It returns an
+object conforming to the [iterator protocol](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols);
+the values returned by the iterator are promises that resolve upon completion of the corresponding test case run.
+The consumer of this iterator **must not** call its `next()` method prior to resolution of the promise returned
+by the previous call: code snippet above provides an outline for the correct usage; another example can be found
+in the [Cort core tests.](https://github.com/MaxMotovilov/cort/blob/master/tests/nodeunit/basic.js) 
+
+Note that the iterator API provides two ways of detecting the end of the loop: via the value the returned promise
+resolves too (falsy value for the last iteration) or via the standard `done` flag returned by the call to `next()`.
+Different usage scenarios may find one or the other more convenient.
+
+The iterator returned by `cort.iterate()` also carries the [metadata properties](#metadata-properties) as well as
+implements one additional method, `copy()`:
+
+#### iterator.copy()
+
+Returns a copy of the iterator that contains a duplicate of the internal data structure describing the discovered
+steps and the permutations that have already been executed up to this point. It can be used to repeat specific runs
+(retry the test case). This method **must not** be called prior to resolution of an already returned promise; the right 
+place to do it is immediately prior to calling `next()`.
