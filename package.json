@@ -25,10 +25,10 @@
   "dependencies": {},
   "peerDependencies": {
     "nodeunit": "*",
-    "mocha": "*"
+    "mocha": ">= 3"
   },
   "devDependencies": {
     "nodeunit": "*",
-    "mocha": "*"
+    "mocha": ">= 3"
   }
 }
