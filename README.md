@@ -271,8 +271,8 @@ or even provides significant convenience compared to using 2 separate calls to `
 
 Each unit testing framework defines its own syntax for test cases. Cort generally expects
 the test cases to be functions and passes in its two main APIs -- `later()` and `done()` either
-as freestanding function parameters ([Mocha](#mocha-api)) or as methods on an interface object 
-([nodeunit](#nodeunit-api)). 
+as freestanding function parameters ([Mocha](#mocha-plugin-api)) or as methods on an interface object 
+([nodeunit](#nodeunit-plugin-api)). 
 
 ### later()
 
