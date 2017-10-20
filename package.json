@@ -1,13 +1,14 @@
 {
   "name": "cort-unit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "COmbinatorial Reachability Testing for asynchronous unit tests",
   "main": "index.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "test": "node_modules/nodeunit/bin/nodeunit tests/nodeunit; node_modules/mocha/bin/mocha tests/mocha"
+    "test": "node_modules/nodeunit/bin/nodeunit tests/nodeunit; node_modules/mocha/bin/mocha tests/mocha",
+    "must-fail": "node_modules/nodeunit/bin/nodeunit must-fail/nodeunit.js; node_modules/mocha/bin/mocha must-fail/mocha.js"
   },
   "repository": {
     "type": "git",
