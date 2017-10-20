@@ -48,19 +48,19 @@ describe( "Shared list update example", () => {
 */
             read( key ) {
                 return later( 
-                    "Read " + this.client_id + "-" + ++this.tag_id, 
-                    () => this.readSync( key ) 
+                    () => this.readSync( key ),
+                    "Read " + this.client_id + "-" + ++this.tag_id
                 ).promise()
             }
 
             swap( key, value ) {
                 return later( 
-                    "Swap " + this.client_id + "-" + ++this.tag_id, 
                     () => {
                         const old_value = this.readSync( key );
                         this.writeSync( key, value );
                         return old_value
-                    }
+                    },
+                    "Swap " + this.client_id + "-" + ++this.tag_id
                 ).promise()
             }
 

@@ -23,7 +23,7 @@ describe( "Streaming parser example", () => {
 
         // Asynchronous producer
         test_data.reduce( 
-            (seq, chunk, i) => (seq.later || later)( "Write chunk " + i, () => parser.write( chunk ) )
+            (seq, chunk, i) => (seq.later || later)( () => parser.write( chunk ), "Write chunk " + i )
         , {} ).later( () => parser.end() );
 
         // Asynchronous consumer
@@ -32,7 +32,7 @@ describe( "Streaming parser example", () => {
 
             if( line != null ) {
                 assert.equal( line, "Line " + ++line_no );
-                later( "Read line " + line_no, consume );
+                later( consume, "Read line " + line_no );
             }
         }
     } );

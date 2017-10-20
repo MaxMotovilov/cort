@@ -186,19 +186,19 @@ and completion of an asynchronous step:
 
     read( key ) {
         return later( 
-            "Read " + this.client_id + "-" + ++this.tag_id, 
-            ready => ready.when( promise( () => this.readSync( key ) ) ) 
+            ready => ready.when( promise( () => this.readSync( key ) ) ),
+            "Read " + this.client_id + "-" + ++this.tag_id
         ).promise()
     }
 
     swap( key, value ) {
         return later( 
-            "Swap " + this.client_id + "-" + ++this.tag_id, 
             ready => ready.when( promise( () => {
                 const old_value = this.readSync( key );
                 this.writeSync( key, value );
                 return old_value
-            } ) )
+            } ) ),
+            "Swap " + this.client_id + "-" + ++this.tag_id
         ).promise()
     }
  
@@ -212,19 +212,19 @@ enough to only vary the order in which the operations as a whole execute:
 
     read( key ) {
         return later( 
-            "Read " + this.client_id + "-" + ++this.tag_id, 
-            () => this.readSync( key ) 
+            () => this.readSync( key ),
+            "Read " + this.client_id + "-" + ++this.tag_id
         ).promise()
     }
 
     swap( key, value ) {
         return later( 
-            "Swap " + this.client_id + "-" + ++this.tag_id, 
             () => {
                 const old_value = this.readSync( key );
                 this.writeSync( key, value );
                 return old_value
-            }
+            },
+            "Swap " + this.client_id + "-" + ++this.tag_id
         ).promise()
     }
 
@@ -277,10 +277,10 @@ as freestanding function parameters ([Mocha](#mocha-plugin-api)) or as methods o
 ### later()
 
     later( () => stream.write( chunk ) );
-    later( "Notify consumers", () => source.emit( "dataReady" ) );
+    later( () => source.emit( "dataReady" ), "Notify consumers" );
 
 Used to specify an asynchronosly initiated immediate step, represented by a callback function with
-no arguments; ES6 arrow functions provide a compact and convenient syntax. Optional first argument
+no arguments; ES6 arrow functions provide a compact and convenient syntax. Optional second argument
 can be used to tag the step with a unique text string. If tag is omitted, string representation
 of the callback function is used in its place. Note that uniqueness of the tag is important to the 
 permutating algorithm! 

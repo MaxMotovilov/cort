@@ -111,7 +111,7 @@ exports.completion2 = testCort(
         later( ready => setTimeout( ready( next( "Path B" ) ), 100 ) );
 
         function next( tag ) {
-            return () => later( tag, () => --total || done() )
+            return () => later( () => --total || done(), tag )
         }
     }
 );

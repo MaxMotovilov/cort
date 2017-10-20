@@ -115,16 +115,14 @@ function cort( iteration, next_iteration, complete, options, meta, root, path, r
 
         iteration( later, done, meta );
 
-        function later( tag, fn ) {
+        function later( fn, tag ) {
 
             const seq = this && this.later && this || { tags: [], promise: promisifyLater };
             if( !seq.later )
                 seq.later = later.bind( seq );
 
-            if( fn == null ) {
-                fn = tag;
+            if( tag == null )
                 tag = fn.toString();
-            }
 
             pool.push( { seq: seq, pos: seq.tags.length, fn: fn } );
             seq.tags.push( tag );
